@@ -12,6 +12,7 @@ python sort.py "C:\Users\yourmom\Downloads"
 ```
 
 This script becomes more useful if you fuck around with the windows registry a bit to be able to run it from a context menu.
+
 ![screenshot](https://github.com/veethree/sort.py/blob/main/sort.png)
 
 
