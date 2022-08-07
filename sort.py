@@ -1,13 +1,26 @@
-# A file sorting script that sorts files into subfolders based on their extension.
+# sort.py: A little script that sorts files in a folder, Either by file type or by date
+# Can be called with the following arguments
+# 'python sort.py [Path to folder] [Mode (type/date)]
 
+# The 'type' mode will sort the files into subfolders based on the filetype. Categories can be set up in the settings.py file.
+# File types without a category will be placed in a folder named after the extension.
+# Examples:
+# C://Users/yourmom/Downloads/file.mp3 => C:/Users/yourmom/Downloads/Audio/file.mp3
+# C://Users/yourmom/Downloads/file.js => C:/Users/yourmom/Downloads/js/file.js
+#
+
+# The 'date' mode will sort the files into subfolders based on the date of creation.
+# Examples:
+# C://Users/yourmom/Downloads/file.mp3 => C:/Users/yourmom/Downloads/2022/03 March/13 - file.mp3
 from os import listdir, mkdir, rename
-from os.path import isfile, splitext, isdir, basename, dirname, realpath, getsize
+from os.path import isfile, isdir, basename, dirname, realpath, getsize, getctime, join, splitext
 from sys import argv
-import math
+from datetime import datetime
 from tkinter import messagebox
-from settings import category, exclude
+from tkinter.tix import DirSelectBox
+from settings import category, exclude, allow_rename
+import math
 
-# Source: https://stackoverflow.com/questions/5194057/better-way-to-convert-file-sizes-in-python
 def convert_size(size_bytes):
    if size_bytes == 0:
        return "0B"
@@ -17,52 +30,89 @@ def convert_size(size_bytes):
    s = round(size_bytes / p, 2)
    return "%s %s" % (s, size_name[i])
 
-# The directory to be sorter, Either the directory of the script,
-# Or one provided as an argument
+# Working directory, Either the first argument, Or the path of the script
 directory = dirname(realpath(__file__))
+mode = "type"
 if len(argv) > 1:
     if isdir(argv[1]):
         directory = argv[1]
     else:
         print(f"'{argv[1]}' is not a valid directory!")
+    
+    if len(argv) > 2:
+        if argv[2] == "type" or argv[2] == "date":
+            mode = argv[2]
 
-# Creating a list of files to be sorted
-# Also counting them, And adding up their sizes while we're at it.
+# Gathering the files and all relevant data into a neat list
 files = []
 size = 0
-file_count = 0
+count = 0
 for item in listdir(directory):
     if isfile(f"{directory}\{item}"):
         if item != basename(__file__):
+            # Date stuff
+            day, month, year = datetime.fromtimestamp(getctime(join(directory, item))).strftime("%d-%m %B-%Y").split("-")
+
+            # Type stuff
             filename, filetype = splitext(item)
             filetype = filetype.strip(".")
+
             if not filetype in exclude:
-                files.append({"filename":filename, "filetype":filetype})
-                file_count += 1
+                files.append({
+                    "path":join(directory, item),
+                    "name":item,
+                    "name_stripped":filename,
+                    "type":filetype,
+                    "cday":day,
+                    "cmonth":month.strip("0"),
+                    "cyear":year
+                })
+                count += 1
                 size += getsize(f"{directory}\{item}")
 
-# Doing all the sorting business.
-def sort():
+def sort_by_date():
+    for file in files:
+        # Creating YEAR directory if it doesn't exist
+        if not isdir(join(directory, file["cyear"])):
+            mkdir(join(directory, file["cyear"]))
+        # Creating MONTH directory if it doesn't exist
+        if not isdir(join(directory, file["cyear"], file["cmonth"])):
+            mkdir(join(directory, file["cyear"], file["cmonth"]))
+
+        # Moving files to their folders
+        destination = join(directory, file["cyear"], file["cmonth"], {file["name"]})
+        if allow_rename:
+            destination = join(directory, file["cyear"], file["cmonth"], f'{file["cday"]} - {file["name"]}')
+
+        rename(join(directory, file["path"]), destination)
+
+def sort_by_type():
     for file in files:
         destination_folder = ""
         # Creating category folders
-        if file["filetype"] in category:
-            if not isdir(f'{directory}\{category[file["filetype"]]}'):
-                mkdir(f'{directory}\{category[file["filetype"]]}')
-            destination_folder = f'{directory}\{category[file["filetype"]]}'
+        if file["type"] in category:
+            if not isdir(join(directory, category[file["type"]])):
+                mkdir(join(directory, category[file["type"]]))
+            destination_folder = join(directory, category[file["type"]])
+
         else:
             # Creating filetype folder if one doesnt exist
-            if not isdir(f'{directory}\{file["filetype"]}'):
-                mkdir(f'{directory}\{file["filetype"]}')
-            destination_folder = f'{directory}\{file["filetype"]}'
+            #if not isdir(f'{directory}\{file["type"]}'):
+            if not isdir(join(directory, file["type"])):
+                mkdir(join(directory, file["type"]))
+            destination_folder = join(directory, file["type"])
+ 
         
         # Moving file to the appropraite folder
-        rename(f'{directory}\{file["filename"]}.{file["filetype"]}', f'{destination_folder}\{file["filename"]}.{file["filetype"]}')
+        rename(join(directory, file["path"]), join(destination_folder, file["name"]))
 
 # Checking in with the user if he really wants to do this, In case he fucks around and tries to sort system32 or something.
 def confirm():
-    go = messagebox.askyesno("Warning", f"You are about to sort {file_count} files ({convert_size(size)}) in the following directory\n'{directory}'\nAre you sure?")
+    go = messagebox.askyesno("Warning", f"You are about to sort (by {mode}) {count} files ({convert_size(size)}) in the following directory\n'{directory}'\nAre you sure?")
     if go:
-        sort()
+        if mode == "date":
+            sort_by_date()
+        elif mode == "type":
+            sort_by_type()
 
 confirm()
