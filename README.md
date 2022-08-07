@@ -4,6 +4,8 @@ It can be set up to group filetypes together into categories (It does this by de
 
 If you call the script without an argument, It will sort the folder the script is in, Otherwise it will sort the folder provided.
 
+Something to keep in mind, At the moment it doesn't really worry about overwriting files and such. But if it attempts to overwrite a file, It just silently crashes.
+
 Usage
 ```
 python sort.py "C:\Users\yourmom\Downloads"
