@@ -1,15 +1,44 @@
 # sort.py
-A little script that sorts files into sub-folders based on their extensions.
-It can be set up to group filetypes together into categories (It does this by default) or just each file type into its own folder. This can be set up with the settings.py file. The settings.py file also contains a list called "exclude". Any file types found there will be ignored by the sorter. By default it only ignores file types for shortcuts (in windows).
+A little script that sorts files in a folder. It has two sort modes, By type, And by date created.
 
-If you call the script without an argument, It will sort the folder the script is in, Otherwise it will sort the folder provided.
-
-Something to keep in mind, At the moment it doesn't really worry about overwriting files and such. But if it attempts to overwrite a file, It just silently crashes.
-
-Usage
+Usage:
 ```
-python sort.py "C:\Users\yourmom\Downloads"
+python sort.py [path to folder] [mode (type or date)]
+
+python sort.py "C:\Users\Your Mother\Downloads" type
 ```
+
+## Type mode
+In type mode, The files will be sorted by their extensions. File extensions can be grouped together into categories in the settings.py file. By default it
+sorts some common Archives (zip, rar, etc), Images (png, jpg, etc.), Audio (mp3, wav, etc.) and Documents (doc, xlsx, etc) into categories.
+
+## Date mode
+In date mode, The files will be sorted by their creation date. First by year, Then by month. Then the day of the month the file was created is added to the filenames (If "allow_rename" is set to True in settings.py)
+
+## Settings.py
+In the settings.py you get a little control over the sorting. It contains a dictionary with the following format that can be used to create categories
+
+```
+category = {
+  "[Extension]":"[Category]"
+}
+```
+
+So if you want all archive files to be grouped together you'd do something like
+```
+category = {
+  "zip":"Archive",
+  "7z":"Archive",
+  "rar":"Archive"
+  etc...
+}
+```
+The default settings.py already does this.
+
+There is also a list called "exclude". Any extensions in that list will be ignored. By default it ignores a couple windows shortcut files.
+
+Then there is a boolean called "allow_rename" If its set to true, The script will be allowed to rename files in date mode.
+
 
 This script becomes more useful if you fuck around with the windows registry a bit to be able to run it from a context menu.
 
